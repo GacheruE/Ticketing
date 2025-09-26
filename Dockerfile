@@ -36,8 +36,15 @@ COPY composer.json composer.lock ./
 # Install PHP dependencies (including dev for PHPUnit)
 RUN composer install --prefer-dist --no-interaction --optimize-autoloader
 
-# Copy the rest of the application code
-COPY . .
+# Copy composer files first (for caching)
+COPY composer.json composer.lock /workspace/
+
+# Set working directory
+WORKDIR /workspace
+
+# Install project dependencies
+RUN composer install --no-interaction --no-scripts --prefer-dist
+
 
 # Expose default web server port
 EXPOSE 80
