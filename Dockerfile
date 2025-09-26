@@ -24,15 +24,6 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set working directory
 WORKDIR /workspace
 
-# Copy composer files first (for caching)
-COPY composer.json composer.lock /workspace/
-
-# Install project dependencies
-RUN composer install --no-interaction --prefer-dist
-
-# Copy the rest of your application code
-COPY . /workspace
-
 # Set composer environment variables
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV COMPOSER_NO_INTERACTION=1
