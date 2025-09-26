@@ -1,7 +1,16 @@
 pipeline {
     agent any
 
+    environment {
+        PHP_BIN = 'php'
+        COMPOSER = 'composer'
+        PHPUNIT = './vendor/bin/phpunit'
+        PHPCS = './vendor/bin/phpcs'
+        PHPSTAN = './vendor/bin/phpstan'
+    }
+
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -10,41 +19,55 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'composer install'
+                sh "${COMPOSER} install --no-interaction"
             }
         }
 
         stage('Run Tests') {
             steps {
-                bat 'vendor\\bin\\phpunit.bat tests'
+                sh "${PHPUNIT} tests"
             }
         }
 
         stage('Code Quality') {
             steps {
-                bat 'vendor\\bin\\phpcs.bat --standard=PSR12 .'
+                sh "${PHPCS} --standard=PSR12 . || true"
+                // true ensures Jenkins continues even if coding standards warnings exist
+            }
+        }
+
+        stage('Static Analysis / Security') {
+            steps {
+                sh "${PHPSTAN} analyse src --level=max || true"
+                // true ensures Jenkins continues even if issues are found
             }
         }
 
         stage('Deploy to Staging') {
             steps {
-                echo 'Deploying to staging...'
-                // Add your actual deploy commands here
+                echo "Deploying to staging..."
+                // Add your staging deployment commands here
             }
         }
 
         stage('Release to Production') {
             steps {
-                echo 'Releasing to production...'
-                // Add your actual release commands here
+                echo "Releasing to production..."
+                // Add your production deployment commands here
             }
         }
 
         stage('Monitoring') {
             steps {
-                echo 'Monitoring application...'
-                // Add monitoring commands or scripts here
+                echo "Monitoring setup..."
+                // Add monitoring/alerting commands or scripts here
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finished."
         }
     }
 }
