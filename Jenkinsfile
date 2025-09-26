@@ -26,8 +26,7 @@ stage('Test') {
         sh '''
         mkdir -p $WORKSPACE/test-results
         docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
-            php vendor/bin/phpunit --configuration /workspace/phpunit.xml \
-            --log-junit /workspace/test-results/junit.xml
+            php vendor/bin/phpunit --configuration /workspace/phpunit.xml --log-junit /workspace/test-results/junit.xml
         "
         '''
     }
@@ -37,6 +36,7 @@ stage('Test') {
         }
     }
 }
+
 
 
 
