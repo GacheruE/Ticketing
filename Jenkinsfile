@@ -20,14 +20,15 @@ pipeline {
             }
         }
 
-        stage('Test') {
+        sstage('Test') {
     steps {
         echo 'Running automated tests inside Docker...'
         sh '''
         mkdir -p $WORKSPACE/test-results
         docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
+            cd /workspace &&
             composer install --no-interaction &&
-            php vendor/bin/phpunit --configuration /workspace/phpunit.xml --log-junit /workspace/test-results/junit.xml
+            php vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
         "
         '''
     }
