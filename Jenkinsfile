@@ -19,6 +19,13 @@ pipeline {
                 """
             }
         }
+
+stage('Debug') {
+    steps {
+        sh 'ls -R $WORKSPACE'
+    }
+}
+
 stage('Install Dependencies') {
     steps {
         echo 'Installing PHP dependencies inside Docker...'
