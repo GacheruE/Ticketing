@@ -1,23 +1,32 @@
 pipeline {
-    agent {
-        docker {
-            image 'php:8.2-cli'
-            args '-w /workspace -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace'
-        }
+    agent any
+    environment {
+        DOCKER_HOST = 'tcp://docker:2375'
     }
-    
     stages {
-        stage('Test Docker Agent') {
+        stage('Build') {
             steps {
-                sh '''
-                    echo "PHP is working!"
-                    php --version
-                    echo " Composer is available!"
-                    composer --version
-                    echo " Current directory:"
-                    pwd
-                    ls -la
-                '''
+                echo 'Building project and creating Docker image'
+                sh 'docker build -t ticketing-app .'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Running automated tests'
+                sh 'docker run --rm ticketing-app php vendor/bin/phpunit'
+            }
+        }
+        stage('Code Quality') {
+            steps {
+                echo 'Running code quality analysis'
+                // Example using SonarScanner
+                sh 'sonar-scanner'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying app to test environment'
+                sh 'docker run -d -p 8081:80 ticketing-app'
             }
         }
     }
