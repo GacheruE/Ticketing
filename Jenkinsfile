@@ -1,5 +1,6 @@
 pipeline {
-    agent { label 'php-node' }
+    agent any
+
 
     environment {
         COMPOSER = 'composer'
