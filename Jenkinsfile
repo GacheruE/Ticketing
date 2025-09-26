@@ -20,7 +20,7 @@ pipeline {
             }
         }
 
-        sstage('Test') {
+stage('Test') {
     steps {
         echo 'Running automated tests inside Docker...'
         sh '''
