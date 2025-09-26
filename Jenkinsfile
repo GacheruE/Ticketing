@@ -21,36 +21,37 @@ pipeline {
         }
 
 stage('Install Dependencies') {
-            steps {
-                echo 'Installing PHP dependencies inside Docker...'
-                sh """
-                    docker run --rm \
-                    -v ${WORKSPACE_DIR}:/workspace \
-                    -w /workspace \
-                    ${DOCKER_IMAGE} \
-                    composer install --no-interaction --prefer-dist
-                """
-            }
-        }
+    steps {
+        echo 'Installing PHP dependencies inside Docker...'
+        sh """
+            docker run --rm \
+            -v ${WORKSPACE}:/workspace \
+            -w /workspace \
+            ticketing-app \
+            composer install --no-interaction --prefer-dist
+        """
+    }
+}
 
-        stage('Test') {
-            steps {
-                echo 'Running automated tests inside Docker...'
-                sh """
-                    mkdir -p ${WORKSPACE_DIR}/test-results
-                    docker run --rm \
-                    -v ${WORKSPACE_DIR}:/workspace \
-                    -w /workspace \
-                    ${DOCKER_IMAGE} \
-                    php vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
-                """
-            }
-            post {
-                always {
-                    junit 'test-results/junit.xml'
-                }
-            }
+       stage('Test') {
+    steps {
+        echo 'Running automated tests inside Docker...'
+        sh """
+            mkdir -p ${WORKSPACE}/test-results
+            docker run --rm \
+            -v ${WORKSPACE}:/workspace \
+            -w /workspace \
+            ticketing-app \
+            php vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
+        """
+    }
+    post {
+        always {
+            junit 'test-results/junit.xml'
         }
+    }
+}
+
 
 
 
