@@ -19,6 +19,13 @@ pipeline {
                 """
             }
         }
+stage('Install Dependencies') {
+    steps {
+        echo 'Installing PHP dependencies via Composer...'
+        sh 'composer install --no-interaction --prefer-dist'
+    }
+}
+
 
 stage('Test') {
     steps {
@@ -26,7 +33,7 @@ stage('Test') {
         sh '''
         mkdir -p $WORKSPACE/test-results
         docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
-            cd /workspace && composer install --no-interaction --prefer-dist &&
+            cd /workspace &&
             php vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
         "
         '''
@@ -37,6 +44,7 @@ stage('Test') {
         }
     }
 }
+
 
 
 
