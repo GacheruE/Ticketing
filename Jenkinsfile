@@ -23,13 +23,12 @@ stage('Install Dependencies') {
     steps {
         echo 'Installing PHP dependencies inside Docker...'
         sh '''
-        docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
-            cd /workspace &&
+        docker run --rm -v $WORKSPACE:/workspace -w /workspace ticketing-app \
             composer install --no-interaction --prefer-dist
-        "
         '''
     }
 }
+
 
 
 
@@ -38,10 +37,8 @@ stage('Test') {
         echo 'Running automated tests inside Docker...'
         sh '''
         mkdir -p $WORKSPACE/test-results
-        docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
-            cd /workspace &&
+        docker run --rm -v $WORKSPACE:/workspace -w /workspace ticketing-app \
             php vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
-        "
         '''
     }
     post {
