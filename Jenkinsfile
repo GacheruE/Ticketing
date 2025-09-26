@@ -21,14 +21,21 @@ pipeline {
         }
 
         stage('Test') {
-            steps {
-                echo 'Running automated tests inside Docker...'
-                sh """
-                    # Run PHPUnit tests inside the Docker container
-                    docker run --rm $APP_NAME php vendor/bin/phpunit || true
-                """
-            }
+    steps {
+        echo 'Running automated tests inside Docker...'
+        sh '''
+        mkdir -p $WORKSPACE/test-results
+        docker run --rm -v $WORKSPACE:/workspace ticketing-app \
+        php vendor/bin/phpunit --configuration /workspace/phpunit.xml --log-junit /workspace/test-results/junit.xml
+        '''
+    }
+    post {
+        always {
+            junit 'test-results/junit.xml'
         }
+    }
+}
+
 
         stage('Code Quality') {
             steps {
