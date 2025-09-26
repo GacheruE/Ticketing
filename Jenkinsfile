@@ -21,10 +21,16 @@ pipeline {
         }
 stage('Install Dependencies') {
     steps {
-        echo 'Installing PHP dependencies via Composer...'
-        sh 'composer install --no-interaction --prefer-dist'
+        echo 'Installing PHP dependencies inside Docker...'
+        sh '''
+        docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
+            cd /workspace &&
+            composer install --no-interaction --prefer-dist
+        "
+        '''
     }
 }
+
 
 
 stage('Test') {
@@ -44,6 +50,7 @@ stage('Test') {
         }
     }
 }
+
 
 
 
