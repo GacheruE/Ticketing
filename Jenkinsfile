@@ -25,7 +25,10 @@ stage('Test') {
         echo 'Running automated tests inside Docker...'
         sh '''
         mkdir -p $WORKSPACE/test-results
-        docker run --rm ticketing-app php vendor/bin/phpunit --configuration /workspace/phpunit.xml --log-junit /workspace/test-results/junit.xml
+        docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
+            php vendor/bin/phpunit --configuration /workspace/phpunit.xml \
+            --log-junit /workspace/test-results/junit.xml
+        "
         '''
     }
     post {
