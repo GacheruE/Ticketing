@@ -14,12 +14,12 @@ pipeline {
         }
 
         stage('Build') {
-            steps {
-                echo "Building project and installing dependencies"
-                // Run Docker commands as root
-                sh 'docker run --rm -v $APP_DIR:/app -w /app php:8.2-cli composer install --no-interaction'
-            }
-        }
+    steps {
+        sh 'sudo docker run --rm -v $APP_DIR:/app -w /app php:8.2-cli composer install --no-interaction'
+    }
+}
+
+        
 
         stage('Test') {
             steps {
