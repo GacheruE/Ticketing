@@ -1,7 +1,6 @@
 pipeline {
-    agent {
-        docker { image 'php:8.2-cli' }
-    }
+    agent { label 'php-node' }
+
     environment {
         COMPOSER = 'composer'
         PHPUNIT = './vendor/bin/phpunit'
@@ -18,8 +17,6 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh "php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\""
-                sh "php composer-setup.php --install-dir=/usr/local/bin --filename=composer"
                 sh "${COMPOSER} install --no-interaction"
             }
         }
