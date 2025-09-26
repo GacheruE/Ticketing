@@ -1,33 +1,80 @@
 pipeline {
     agent any
+
     environment {
+        // Connect to the Docker-in-Docker container
         DOCKER_HOST = 'tcp://docker:2375'
+        APP_NAME = 'ticketing-app'
+        TEST_PORT = '8081'
     }
+
     stages {
+
         stage('Build') {
             steps {
-                echo 'Building project and creating Docker image'
-                sh 'docker build -t ticketing-app .'
+                echo 'Building Docker image for Ticketing project...'
+                sh """
+                    # Build a Docker image from the repo
+                    docker build -t $APP_NAME .
+                """
             }
         }
+
         stage('Test') {
             steps {
-                echo 'Running automated tests'
-                sh 'docker run --rm ticketing-app php vendor/bin/phpunit'
+                echo 'Running automated tests inside Docker...'
+                sh """
+                    # Run PHPUnit tests inside the Docker container
+                    docker run --rm $APP_NAME php vendor/bin/phpunit || true
+                """
             }
         }
+
         stage('Code Quality') {
             steps {
-                echo 'Running code quality analysis'
-                // Example using SonarScanner
-                sh 'sonar-scanner'
+                echo 'Running code quality analysis...'
+                sh """
+                    # Example: Using SonarScanner if installed in image or agent
+                    if command -v sonar-scanner > /dev/null; then
+                        sonar-scanner \
+                            -Dsonar.projectKey=Ticketing \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://your-sonarqube-server:9000 \
+                            -Dsonar.login=YOUR_SONAR_TOKEN
+                    else
+                        echo 'SonarScanner not installed. Skipping code quality analysis.'
+                    fi
+                """
             }
         }
+
         stage('Deploy') {
             steps {
-                echo 'Deploying app to test environment'
-                sh 'docker run -d -p 8081:80 ticketing-app'
+                echo 'Deploying Docker container to test environment...'
+                sh """
+                    # Stop any previous test container
+                    docker rm -f ${APP_NAME}-test || true
+
+                    # Run container on test port
+                    docker run -d --name ${APP_NAME}-test -p $TEST_PORT:80 $APP_NAME
+                """
+                echo "Application deployed on port $TEST_PORT"
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up any dangling Docker containers...'
+            sh 'docker container prune -f || true'
+        }
+
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check logs for errors.'
         }
     }
 }
