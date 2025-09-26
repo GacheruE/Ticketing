@@ -12,9 +12,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     nodejs \
     npm \
-    default-mysql-client \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    default-mysql-client
 
 # Install PHP extensions
 RUN docker-php-ext-install \
@@ -26,28 +24,17 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set working directory
 WORKDIR /workspace
 
-# Set Composer environment variables
-ENV COMPOSER_ALLOW_SUPERUSER=1
-ENV COMPOSER_NO_INTERACTION=1
-
-# Copy composer files first for caching
-COPY composer.json composer.lock ./
-
-# Install PHP dependencies (including dev for PHPUnit)
-RUN composer install --prefer-dist --no-interaction --optimize-autoloader
-
 # Copy composer files first (for caching)
 COPY composer.json composer.lock /workspace/
 
-# Set working directory
-WORKDIR /workspace
-
 # Install project dependencies
-RUN composer install --no-interaction --no-scripts --prefer-dist
+RUN composer install --no-interaction --prefer-dist
 
+# Copy the rest of your application code
+COPY . /workspace
 
-# Expose default web server port
-EXPOSE 80
+# Set composer environment variables
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_NO_INTERACTION=1
 
-# Default command
-CMD ["php", "-a"]
+CMD ["php", "--version"]
