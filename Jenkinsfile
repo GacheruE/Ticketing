@@ -25,8 +25,10 @@ pipeline {
         echo 'Running automated tests inside Docker...'
         sh '''
         mkdir -p $WORKSPACE/test-results
-        docker run --rm -v $WORKSPACE:/workspace ticketing-app \
-        php vendor/bin/phpunit --configuration /workspace/phpunit.xml --log-junit /workspace/test-results/junit.xml
+        docker run --rm -v $WORKSPACE:/workspace ticketing-app sh -c "
+            composer install --no-interaction &&
+            php vendor/bin/phpunit --configuration /workspace/phpunit.xml --log-junit /workspace/test-results/junit.xml
+        "
         '''
     }
     post {
@@ -35,6 +37,7 @@ pipeline {
         }
     }
 }
+
 
 
         stage('Code Quality') {
