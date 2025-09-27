@@ -22,22 +22,18 @@ pipeline {
 
         stage('Test') {
     steps {
-        echo 'Running automated tests inside Docker...'
-
-        // Run PHPUnit inside the container
-        sh """
-            docker run --rm \
-                -v \"${WORKSPACE}:/workspace\" \
-                -w /workspace \
-                ticketing-app \
-                sh -c '
-                    composer install --no-interaction --prefer-dist &&
-                    mkdir -p test-results &&
+        script {
+            docker.image('ticketing-app').inside("-v ${env.WORKSPACE}:/workspace -w /workspace") {
+                sh '''
+                    pwd
+                    ls -la
+                    mkdir -p test-results
+                    composer install --no-interaction --prefer-dist
                     vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
-                '
-        """
+                '''
+            }
+        }
     }
-
     post {
         always {
             junit 'test-results/junit.xml'
