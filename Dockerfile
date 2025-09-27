@@ -2,25 +2,23 @@ FROM php:8.2-cli
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev libzip-dev zip unzip nodejs npm default-mysql-client
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql mbstring zip gd exif pcntl
-
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    git unzip libzip-dev \
+    && docker-php-ext-install zip
 
 # Set working directory
 WORKDIR /workspace
 
-# Copy all project files first
-COPY . /workspace
+# Copy only composer files first
+COPY composer.json composer.lock ./
 
-# Install PHP dependencies
+# Install dependencies inside container
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN composer install --no-dev --no-interaction --prefer-dist
+
+# Now copy the rest of the app
+COPY . .
+
+# Install dev dependencies (if needed for tests)
 RUN composer install --no-interaction --prefer-dist
 
-# Set composer environment variables
-ENV COMPOSER_ALLOW_SUPERUSER=1
-ENV COMPOSER_NO_INTERACTION=1
-
-CMD ["php", "--version"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
