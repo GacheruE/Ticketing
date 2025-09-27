@@ -23,12 +23,28 @@ pipeline {
         stage('Test') {
     steps {
         echo 'Running automated tests inside Docker...'
-        sh '''
-            docker run --rm ticketing-app \
-                sh -c "mkdir -p test-results && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
-        '''
+
+        // Ensure test-results directory exists in Jenkins workspace
+        sh 'mkdir -p test-results'
+
+        // Run PHPUnit inside the Docker container
+        sh """
+            docker run --rm \
+                -v \$WORKSPACE/test-results:/workspace/test-results \
+                -w /workspace \
+                ticketing-app \
+                sh -c "vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
+        """
+    }
+
+    post {
+        always {
+            // Publish test results to Jenkins
+            junit 'test-results/junit.xml'
+        }
     }
 }
+
 
 
 
