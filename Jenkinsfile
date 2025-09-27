@@ -27,23 +27,6 @@ stage('Test') {
     }
 }
         
-stage('Test') {
-    steps {
-        echo 'Running automated tests inside Docker...'
-
-        // Run PHPUnit inside Docker and create test-results folder if it doesn't exist
-        sh '''
-            docker run --rm -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace -w /workspace ticketing-app sh -c "mkdir -p test-results && composer install --no-interaction --prefer-dist && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"  '''
-    }
-
-    post {
-        always {
-            // Publish JUnit test results to Jenkins
-            junit 'test-results/junit.xml'
-        }
-    }
-}
-
 
         stage('Code Quality') {
             steps {
