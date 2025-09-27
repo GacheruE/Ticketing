@@ -24,16 +24,23 @@ pipeline {
     steps {
         echo 'Running automated tests inside Docker...'
         sh """
-            docker run --rm ticketing-app sh -c 'mkdir -p test-results && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml'
+            # Build image with current code
+            docker build -t ticketing-app-test .
+            
+            # Run container and keep it running
+            docker run -d --name test-container -w /workspace ticketing-app-test tail -f /dev/null
+            
+            # Execute tests and copy results
+            docker exec test-container vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
+            docker cp test-container:/workspace/test-results/junit.xml ./test-results/
+            
+            # Cleanup
+            docker stop test-container
+            docker rm test-container
         """
     }
     post {
         always {
-            // Copy results from the image
-            sh '''
-                docker run --rm -v \$(pwd)/test-results:/output ticketing-app \
-                sh -c 'cp /workspace/test-results/junit.xml /output/ 2>/dev/null || echo "No test results found"'
-            '''
             junit 'test-results/junit.xml'
         }
     }
