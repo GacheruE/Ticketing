@@ -10,6 +10,8 @@ WORKDIR /workspace
 
 # Copy only composer files first
 COPY composer.json composer.lock ./
+RUN composer install --no-interaction --prefer-dist
+
 
 # Install dependencies inside container
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
