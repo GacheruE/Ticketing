@@ -22,20 +22,21 @@ pipeline {
 
         stage('Test') {
     steps {
-        sh '''
-            docker run --rm \
-                -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace \
-                -w /workspace \
-                ticketing-app \
-                sh -c "ls -la && composer install --no-interaction --prefer-dist && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
-        '''
+        echo 'Running automated tests inside Docker...'
+        sh """
+            docker build -t ticketing-app .
+            docker run --rm -w /workspace ticketing-app \
+                sh -c 'mkdir -p test-results && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml'
+        """
     }
+
     post {
         always {
             junit 'test-results/junit.xml'
         }
     }
 }
+
         
 
         stage('Code Quality') {
