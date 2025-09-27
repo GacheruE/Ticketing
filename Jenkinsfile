@@ -51,22 +51,29 @@ pipeline {
         
 
         stage('Code Quality') {
-            steps {
-                echo 'Running code quality analysis...'
-                sh """
-                    # Example: Using SonarScanner if installed in image or agent
-                    if command -v sonar-scanner > /dev/null; then
-                        sonar-scanner \
-                            -Dsonar.projectKey=Ticketing \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=http://your-sonarqube-server:9000 \
-                            -Dsonar.login=YOUR_SONAR_TOKEN
-                    else
-                        echo 'SonarScanner not installed. Skipping code quality analysis.'
-                    fi
-                """
-            }
+    steps {
+        echo 'Running PHP Code Sniffer for code quality analysis...'
+        sh """
+            # Run container for code quality analysis
+            docker run -d --name quality-container -w /workspace ticketing-app-test tail -f /dev/null
+            
+            # Install PHP Code Sniffer
+            docker exec quality-container composer require --dev squizlabs/php_codesniffer
+            
+            # Run code style analysis
+            docker exec quality-container vendor/bin/phpcs --standard=PSR12 --report=checkstyle --report-file=test-results/checkstyle.xml . || true
+            
+            # Cleanup
+            docker stop quality-container
+            docker rm quality-container
+        """
+    }
+    post {
+        always {
+            recordIssues tools: [phpCodeSniffer(pattern: 'test-results/checkstyle.xml')]
         }
+    }
+}
 
         stage('Deploy') {
             steps {
