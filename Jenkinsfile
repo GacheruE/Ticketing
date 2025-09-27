@@ -22,17 +22,13 @@ pipeline {
 
         stage('Test') {
     steps {
-        script {
-            docker.image('ticketing-app').inside("-v ${env.WORKSPACE}:/workspace -w /workspace") {
-                sh '''
-                    pwd
-                    ls -la
-                    mkdir -p test-results
-                    composer install --no-interaction --prefer-dist
-                    vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
-                '''
-            }
-        }
+        sh '''
+            docker run --rm \
+                -v $(pwd):/workspace \
+                -w /workspace \
+                ticketing-app \
+                sh -c "composer install --no-interaction --prefer-dist && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
+        '''
     }
     post {
         always {
