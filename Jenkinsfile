@@ -46,11 +46,7 @@ pipeline {
     }
 }
 
-
-
-        
-
-        stage('Code Quality') {
+stage('Code Quality') {
     steps {
         echo 'Running comprehensive code quality analysis...'
         sh """
@@ -58,32 +54,26 @@ pipeline {
             docker run -d --name quality-container -w /workspace ticketing-app-test tail -f /dev/null
             
             # Install comprehensive toolset
-            docker exec quality-container composer require --dev \
-                squizlabs/php_codesniffer \
-                phpstan/phpstan \
-                phpmd/phpmd \
+            docker exec quality-container composer require --dev \\
+                squizlabs/php_codesniffer \\
+                phpstan/phpstan \\
+                phpmd/phpmd \\
                 sebastian/phpcpd
             
-            # 1. CODE STYLE & STRUCTURE: PHP Code Sniffer
-            echo "=== PHP Code Sniffer (Code Style & Structure) ==="
-            docker exec quality-container vendor/bin/phpcs --standard=PSR12 . > test-results/phpcs.txt 2>&1 || true
+            # Run all quality tools
+            echo "Running Code Quality Tools "
             
-            # 2. CODE SMELLS & DESIGN PATTERNS: PHP Mess Detector
-            echo "=== PHPMD (Code Smells & Design Issues) ==="
-            docker exec quality-container vendor/bin/phpmd . text codesize,unusedcode,naming,design > test-results/phpmd.txt 2>&1 || true
+            # PHP Code Sniffer - Code Style
+            docker exec quality-container vendor/bin/phpcs --standard=PSR12 --report=summary . || echo "PHPCS completed"
             
-            # 3. STATIC ANALYSIS & COMPLEXITY: PHPStan
-            echo "=== PHPStan (Static Analysis & Complexity) ==="
-            docker exec quality-container vendor/bin/phpstan analyse --level=5 > test-results/phpstan.txt 2>&1 || true
+            # PHP Mess Detector - Code Smells
+            docker exec quality-container vendor/bin/phpmd . text codesize,unusedcode,naming,design || echo "PHPMD completed"
             
-            # 4. CODE DUPLICATION: PHP Copy/Paste Detector
-            echo "=== PHPCPD (Code Duplication) ==="
-            docker exec quality-container vendor/bin/phpcpd . > test-results/phpcpd.txt 2>&1 || true
+            # PHPStan - Static Analysis  
+            docker exec quality-container vendor/bin/phpstan analyse --level=5 --no-progress || echo "PHPStan completed"
             
-            # 5. MAINTAINABILITY: Code Metrics
-            echo "=== Code Metrics (Maintainability) ==="
-            docker exec quality-container find . -name "*.php" -exec wc -l {} \\; | sort -nr > test-results/complexity.txt || true
-            docker exec quality-container find . -name "*.php" | wc -l > test-results/file-count.txt || true
+            # PHPCPD - Duplication
+            docker exec quality-container vendor/bin/phpcpd . || echo "PHPCPD completed"
             
             # Cleanup
             docker stop quality-container
@@ -92,35 +82,9 @@ pipeline {
     }
     post {
         always {
-            // Archive all results for review
-            archiveArtifacts artifacts: 'test-results/*.txt', allowEmptyArchive: true
-            
-            // Generate quality summary
-            script {
-                echo "=== CODE QUALITY ANALYSIS SUMMARY ==="
-                echo "Toolset: PHPCS (style), PHPMD (smells), PHPStan (complexity), PHPCPD (duplication)"
-                
-                if (fileExists('test-results/phpcs.txt')) {
-                    def phpcs = readFile file: 'test-results/phpcs.txt'
-                    echo "Code Style: ${phpcs.split('\n').findAll { it.contains('ERROR') || it.contains('WARNING') }.size} issues"
-                }
-                
-                if (fileExists('test-results/phpmd.txt')) {
-                    def phpmd = readFile file: 'test-results/phpmd.txt'
-                    echo "Code Smells: ${phpmd.split('\n').findAll { it.contains('/workspace/') }.size} violations"
-                }
-                
-                if (fileExists('test-results/phpcpd.txt')) {
-                    def phpcpd = readFile file: 'test-results/phpcpd.txt'
-                    echo "Duplication: ${phpcpd.contains('Found') ? 'Potential duplicates detected' : 'No duplication found'}"
-                }
-                
-                if (fileExists('test-results/complexity.txt')) {
-                    def complexity = readFile file: 'test-results/complexity.txt'
-                    def lines = complexity.split('\n').findAll { it.trim() }
-                    echo "Largest file: ${lines[0]?.replace('/workspace/', '') ?: 'N/A'}"
-                }
-            }
+            echo "Code Quality Analysis Complete"
+            echo "Tools executed: PHPCS, PHPMD, PHPStan, PHPCPD"
+            echo "Check console output for detailed results"
         }
     }
 }
