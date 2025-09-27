@@ -24,21 +24,12 @@ pipeline {
     steps {
         echo 'Running automated tests inside Docker...'
         sh '''
-            mkdir -p test-results
-            docker run --rm \
-                -v $WORKSPACE:/workspace \
-                -w /workspace \
-                ticketing-app \
-                sh -c "vendor/bin/phpunit --configuration phpunit.xml --log-junit /workspace/test-results/junit.xml"
+            docker run --rm ticketing-app \
+                sh -c "mkdir -p test-results && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
         '''
     }
-
-    post {
-        always {
-            junit 'test-results/junit.xml'
-        }
-    }
 }
+
 
 
         
