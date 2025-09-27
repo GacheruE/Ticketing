@@ -19,13 +19,32 @@ pipeline {
                 """
             }
         }
-stage('Test') {
+
+        stage('Test') {
     steps {
-        sh 'pwd && ls -la'
-        sh 'docker run --rm -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace -w /workspace ticketing-app ls -la'
-        sh 'docker run --rm -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace -w /workspace ticketing-app sh -c "pwd && ls -la && which composer && which phpunit"'
+        echo 'Running automated tests inside Docker...'
+
+        // Run PHPUnit inside the container
+        sh """
+            docker run --rm \
+                -v \"${WORKSPACE}:/workspace\" \
+                -w /workspace \
+                ticketing-app \
+                sh -c '
+                    composer install --no-interaction --prefer-dist &&
+                    mkdir -p test-results &&
+                    vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
+                '
+        """
+    }
+
+    post {
+        always {
+            junit 'test-results/junit.xml'
+        }
     }
 }
+
         
 
         stage('Code Quality') {
