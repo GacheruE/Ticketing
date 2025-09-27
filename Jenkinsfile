@@ -100,14 +100,11 @@ stage('Code Quality') {
 
         stage('Security') {
     steps {
-        echo 'Running automated security vulnerability assessment...'
+        echo 'Running security vulnerability assessment...'
         sh """
             docker run -d --name security-container -w /workspace ticketing-app-test tail -f /dev/null
             docker exec security-container composer require --dev enlightn/security-checker
-            
-            # Run security check and capture output properly
             docker exec security-container vendor/bin/security-checker security:check composer.lock > test-results/security-report.txt 2>&1 || true
-            
             docker stop security-container
             docker rm security-container
         """
@@ -122,37 +119,17 @@ stage('Code Quality') {
                 if (fileExists('test-results/security-report.txt')) {
                     def securityReport = readFile file: 'test-results/security-report.txt'
                     
-                    // Check for different possible success messages
-                    if (securityReport.contains('No known vulnerabilities found') || 
-                        securityReport.contains('No packages have known vulnerabilities') ||
-                        securityReport.trim().isEmpty()) {
-                        
-                        echo " SECURITY STATUS: PASSED - No known vulnerabilities detected"
-                        echo "All dependencies are secure and up-to-date"
-                        
-                    } else if (securityReport.contains('vulnerabilit') || securityReport.contains('CVE-')) {
+                    if (securityReport.contains('[OK] 0 packages have known vulnerabilities')) {
+                        echo " SECURITY STATUS: PASSED - No vulnerabilities detected"
+                        echo "All dependencies are secure"
+                    } else if (securityReport.contains('vulnerabilities found')) {
                         echo " SECURITY STATUS: FAILED - Vulnerabilities detected!"
-                        echo "VULNERABILITY DETAILS "
-                        
-                        // Print the entire security report
-                        securityReport.eachLine { line ->
-                            if (line.trim()) {
-                                echo line
-                            }
-                        }
-                        
-                        echo "RECOMMENDED ACTIONS"
-                        echo "1. Run 'composer update' to update vulnerable dependencies"
-                        echo "2. Check the security report in build artifacts for details"
-                        echo "3. Review CVE details at https://github.com/advisories"
-                        
+                        echo securityReport
                         currentBuild.result = 'UNSTABLE'
                     } else {
-                        echo "SECURITY STATUS: Scan completed - Review report for details"
+                        echo "SECURITY STATUS: Scan completed"
                         echo securityReport
                     }
-                } else {
-                    echo " Security report file not found"
                 }
             }
         }
