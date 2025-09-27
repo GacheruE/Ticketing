@@ -24,10 +24,10 @@ pipeline {
     steps {
         sh '''
             docker run --rm \
-                -v $(pwd):/workspace \
+                -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace \
                 -w /workspace \
                 ticketing-app \
-                sh -c "composer install --no-interaction --prefer-dist && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
+                sh -c "ls -la && composer install --no-interaction --prefer-dist && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
         '''
     }
     post {
@@ -36,7 +36,6 @@ pipeline {
         }
     }
 }
-
         
 
         stage('Code Quality') {
