@@ -26,12 +26,7 @@ stage('Test') {
 
         // Run PHPUnit inside Docker and create test-results folder if it doesn't exist
         sh '''
-            docker run --rm \
-                -v "${WORKSPACE}:/workspace" \
-                -w /workspace \
-                ticketing-app \
-                sh -c "mkdir -p test-results && composer install --no-interaction --prefer-dist && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"
-        '''
+            docker run --rm -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace -w /workspace ticketing-app sh -c "mkdir -p test-results && composer install --no-interaction --prefer-dist && vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml"  '''
     }
 
     post {
