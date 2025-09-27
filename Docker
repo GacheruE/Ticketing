@@ -1,31 +1,30 @@
-FROM php:8.2-fpm
-
-WORKDIR /var/www
+FROM php:8.2-cli
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip
+    git curl libpng-dev libonig-dev libxml2-dev libzip-dev zip unzip \
+    nodejs npm default-mysql-client
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo pdo_mysql mbstring zip gd exif pcntl
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy application files
-COPY . .
+# Set working directory
+WORKDIR /workspace
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Copy composer files first for caching
+COPY composer.json composer.lock /workspace/
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Install PHP dependencies (including dev)
+RUN composer install --no-interaction --prefer-dist
 
-EXPOSE 9000
-CMD ["php-fpm"]
+# Copy the rest of the app
+COPY . /workspace
+
+# Set composer env variables
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_NO_INTERACTION=1
+
+CMD ["php", "--version"]
