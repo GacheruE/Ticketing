@@ -19,7 +19,14 @@ pipeline {
                 """
             }
         }
-
+stage('Test') {
+    steps {
+        sh 'pwd && ls -la'
+        sh 'docker run --rm -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace -w /workspace ticketing-app ls -la'
+        sh 'docker run --rm -v /var/jenkins_home/workspace/Ticketing-Pipeline:/workspace -w /workspace ticketing-app sh -c "pwd && ls -la && which composer && which phpunit"'
+    }
+}
+        
 stage('Test') {
     steps {
         echo 'Running automated tests inside Docker...'
