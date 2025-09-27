@@ -20,46 +20,28 @@ pipeline {
             }
         }
 
-stage('Install Dependencies') {
-    steps {
-        echo 'Installing PHP dependencies inside Docker...'
-        sh """
-            docker run --rm \
-            -v ${WORKSPACE}:/workspace \
-            -w /workspace \
-            ticketing-app \
-            composer install --no-interaction --prefer-dist
-        """
-    }
-}
-
-       stage('Test') {
+stage('Test') {
     steps {
         echo 'Running automated tests inside Docker...'
-        sh """
-            mkdir -p ${WORKSPACE}/test-results
-            docker run --rm \
-            -v ${WORKSPACE}:/workspace \
-            -w /workspace \
-            ticketing-app \
-            php vendor/bin/phpunit --configuration phpunit.xml --log-junit test-results/junit.xml
-        """
+
+        // Create test-results directory in Jenkins workspace for JUnit XML
+        sh 'mkdir -p $WORKSPACE/test-results'
+
+        // Run PHPUnit inside the Docker image
+        sh '''
+        docker run --rm ticketing-app \
+        php vendor/bin/phpunit \
+        --configuration phpunit.xml \
+        --log-junit /workspace/test-results/junit.xml
+        '''
     }
     post {
         always {
+            // Publish JUnit test results in Jenkins
             junit 'test-results/junit.xml'
         }
     }
 }
-
-
-
-
-
-
-
-
-
 
         stage('Code Quality') {
             steps {
